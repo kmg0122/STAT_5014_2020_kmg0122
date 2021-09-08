@@ -1,0 +1,8 @@
+---
+title: "Week 2"
+author: "Mingang Kim"
+date: '2021 9 8 '
+output:
+  pdf_document: default
+  html_document: default
+---
