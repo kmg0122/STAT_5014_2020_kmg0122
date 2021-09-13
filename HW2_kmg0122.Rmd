@@ -160,9 +160,10 @@ plot(fitted,residual, xlab="Fitted values", ylab="Residuals", main="Residuals vs
 ### 2. normal Q-Q
 
 ```{r}
-data.q<-quantile(fit.diags$.fitted, probs<-seq(0,1,length.out=length(fit.diags$.fitted)))
+probs<-seq(0,1,length.out=length(fit.diags$.std.resid))
+y<-fit.diags$.std.resid[order(fit.diags$.std.resid)]
 norm<-qnorm(probs, lower.tail = TRUE, log.p = FALSE)
-plot(norm,probs, xlab="Theoritical Qunatiles", ylab="Sample Qunatiles", main = "Normal Q-Q plot")
+plot(norm, y, xlab="Theoritical Qunatiles", ylab="Sample Qunatiles", main = "Normal Q-Q plot")
 ```
 
 ### 3. scale-location
@@ -195,7 +196,7 @@ acf(fit.diags$.resid)
 ```{r}
 par(mfrow=c(2,2))
 plot(fitted,residual, xlab="Fitted values", ylab="Residuals", main="Residuals vs Fitted")   
-plot(norm,probs, xlab="Theoritical Qunatiles", ylab="Sample Qunatiles", main = "Normal Q-Q plot")
+plot(norm, y, xlab="Theoritical Qunatiles", ylab="Sample Qunatiles", main = "Normal Q-Q plot")
 plot(fitted,sq.std, xlab="Fitted values", ylab="sqrt(standarized resiudals)", main="Scale-location") 
 plot(leverage, std.r,  xlab="Leverage", ylab="Resiudals", main="Residuals vs Leverage") 
 ```
