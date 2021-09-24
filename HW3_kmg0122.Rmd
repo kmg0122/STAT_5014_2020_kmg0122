@@ -1,0 +1,90 @@
+---
+title: "HW3_kmg0122"
+author: "Mingang Kim"
+date: '2021 9 23 '
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes: \usepackage{dcolumn}
+---
+
+# 1.
+  
+# 2.
+  
+# 3.
+
+```{r}
+library(data.table)
+covid_raw <- fread("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv")
+us <- covid_raw[covid_raw$countriesAndTerritories == 'United_States_of_America',]
+us_filtered <- us[us$month %in% c(6:7),]
+us_filtered$index <- rev(1:dim(us_filtered)[1]) 
+fit<-lm(`Cumulative_number_for_14_days_of_COVID-19_cases_per_100000`~index, data=us_filtered)
+
+library("broom")
+fit.diags <- broom::augment(fit)
+```
+
+### 1. residuals vs fitted
+
+```{r, fig.height=2.6}
+
+library(ggplot2)
+
+plot1 <- ggplot(fit.diags, aes(x = .fitted, y = .resid)) + 
+  
+geom_point() + xlab("fitted") + ylab("residual") +
+  
+ggtitle("Residual plot", subtitle = waiver())
+
+plot1
+```
+
+### 2. normal Q-Q
+
+```{r, fig.height=2.6}
+probs<-seq(0,1,length.out=length(fit.diags$.std.resid))
+y<-fit.diags$.std.resid[order(fit.diags$.std.resid)]
+norm<-qnorm(probs, lower.tail = TRUE, log.p = FALSE)
+
+plot2 <- ggplot(fit.diags, aes(x = norm, y = y)) + 
+  
+geom_point() + xlab("Theoritical Qunatiles") + ylab("Sample Qunatiles") + 
+  
+ggtitle("Normal Q-Q plot", subtitle = waiver())
+
+plot2
+```
+
+### 3. scale-location
+
+
+```{r, fig.height=2.6}
+plot3 <- ggplot(fit.diags, aes(x = .fitted, y = .std.resid)) +
+  
+geom_point() + xlab("Fitted values") + ylab("sqrt(standarized resiudals)") +
+
+ggtitle("Scale-location", subtitle = waiver())
+
+plot3
+```
+### 4. residuals vs leverage
+
+```{r, fig.height=2.6}
+plot4 <- ggplot(fit.diags, aes(x = .hat, y = .std.resid)) +
+
+geom_point() + xlab("Leverage") + ylab("Resiudals") +
+  
+ggtitle("Residuals vs Leverage", subtitle = waiver())
+
+plot4
+```
+
+# 4.
+```{r}
+library("ggpubr")
+
+
+ggarrange(plot1, plot2, plot3, plot4, ncol = 2, nrow = 2)
+```
