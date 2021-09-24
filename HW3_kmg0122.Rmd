@@ -61,7 +61,7 @@ plot2
 
 
 ```{r, fig.height=2.6}
-plot3 <- ggplot(fit.diags, aes(x = .fitted, y = .std.resid)) +
+plot3 <- ggplot(fit.diags, aes(x = .fitted, y = abs(.std.resid))) +
   
 geom_point() + xlab("Fitted values") + ylab("sqrt(standarized resiudals)") +
 
