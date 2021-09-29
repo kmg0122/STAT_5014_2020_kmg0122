@@ -14,7 +14,7 @@ header-includes: \usepackage{dcolumn}
 # 2.
 
 ### A.
-
+Even though my major in undergrad and master's degree was statistics, I am not confident about my coding skill. Whenever people ask me if I am good at coding, I am not confident. By taking class, I want to improve my programming skill and want to be more confident. 
 \begin{enumerate}
 \item Learn how to code neatly.
 \item Improve visualization skill.
@@ -139,6 +139,7 @@ We have 3 time points. Year, Month and day. There is no missing value in the dat
 library(stargazer)
 stargazer(fit, title="Result",
           single.row = TRUE, type ="latex", header = FALSE)
+
 ```
 
 

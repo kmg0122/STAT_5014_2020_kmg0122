@@ -79,6 +79,7 @@ geom_point() + xlab("Leverage") + ylab("Resiudals") +
 ggtitle("Residuals vs Leverage", subtitle = waiver())
 
 plot4
+
 ```
 
 # 4.
