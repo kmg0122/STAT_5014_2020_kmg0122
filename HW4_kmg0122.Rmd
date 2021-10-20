@@ -1,0 +1,169 @@
+---
+title: "HW4_kmg0122"
+author: "Mingang Kim"
+date: '2021 10 16 '
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+# 1. 
+
+# 2.
+
+# 3.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library("data.table")
+```
+
+
+### (a).
+```{r}
+data.3.a<-read.csv("https://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/ThicknessGauge.dat",
+                   header=F, skip=2, sep = " ")
+
+
+colnames(data.3.a)<-c("index", c("a1","a2","b1","b2","c1","c2"))
+
+
+data.temp.1 <- data.3.a %>% select(index,contains("1")) %>% rename(a=a1, b=b1, c=c1)
+data.temp.2 <- data.3.a %>% select(index,contains("2")) %>%
+  rename(a=a2, b=b2, c=c2) %>% mutate(index=index+10)
+
+dat.3.a <- bind_rows(data.temp.1, data.temp.2) %>%
+  rename("Operator 1"=a,"Operator 2"= b, "Operator 3"=c)
+
+kable(head(dat.3.a), caption="Wall Thickness")
+kable(summary(dat.3.a), caption="Wall Thickness Summary")
+
+#Draw box plot to compare each operator's distribution
+boxplot(dat.3.a[,2:4], ylab = "Measurements of thickness")
+```
+
+### (b).
+```{r}
+data.3.b<-read.csv("https://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/BrainandBodyWeight.dat",
+                   header=F, sep=" ", skip=1)
+
+#rename each column because dplyr cannot road data when column name is duplicated.
+colnames(data.3.b)<-paste(rep(c("Body_Wt","Brain_Wt"),3),c(1,1,2,2,3,3),sep="_")
+
+#made temporary data to merge by row.
+data.temp.1<-data.3.b %>% select(contains("1")) %>% 
+  
+  rename( Body_Wt=Body_Wt_1, Brain_Wt=Brain_Wt_1)
+data.temp.2<-data.3.b %>% select(contains("2")) %>% 
+  
+  rename( Body_Wt=Body_Wt_2, Brain_Wt=Brain_Wt_2)
+data.temp.3<-data.3.b %>% select(contains("3")) %>% 
+  
+  rename( Body_Wt=Body_Wt_3, Brain_Wt=Brain_Wt_3)
+
+#bind data by row. bind_row merge data by row which have the
+# same column name. And then omitted NA data.
+dat.3.b<-bind_rows(data.temp.1,data.temp.2,data.temp.3) %>% na.omit()
+
+kable(head(dat.3.b), caption="Body and Brain weight Data")
+kable(summary(dat.3.b), caption="Summary")
+
+#Draw scatter plot to see if there is any relationship between Body weight and Brain weight
+
+plot(dat.3.b$Body_Wt, dat.3.b$Brain_Wt, xlab="Body Weight",
+     ylab="Brain Weight", main="Scatter plot between Body weight and Brain weight")
+```
+
+### (c).
+```{r}
+data.3.c<-fread("http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/LongJumpData.dat", 
+                sep=" ", fill=T, skip=1, col.names = c(paste0(rep(c("year", "Long_Jump"),4),c(1,1,2,2,3,3,4,4))))
+
+#made temporary data to merge by row.
+data.temp.1<-data.3.c %>% select(contains("1")) %>% rename(year=year1, Long_Jump=Long_Jump1) %>% mutate(year=year+1900)
+data.temp.2<-data.3.c %>% select(contains("2")) %>% rename(year=year2, Long_Jump=Long_Jump2) %>% mutate(year=year+1900)
+data.temp.3<-data.3.c %>% select(contains("3")) %>% rename(year=year3, Long_Jump=Long_Jump3) %>% mutate(year=year+1900)
+data.temp.4<-data.3.c %>% select(contains("4")) %>% rename(year=year4, Long_Jump=Long_Jump4) %>% mutate(year=year+1900)
+
+# data merge
+dat.3.c<-bind_rows(data.temp.1,data.temp.2,data.temp.3, data.temp.4) 
+
+# data summary
+kable(summary(dat.3.c), caption="Summary")
+
+#drop NA values
+dat.3.c <- dat.3.c %>% na.omit()
+
+kable(head(dat.3.c), caption="Body and Brain weight Data")
+
+#check that NA values disappear 
+kable(summary(dat.3.c), caption="Summary")
+
+#scatter plot 
+plot(dat.3.c$year, dat.3.c$Long_Jump, xlab="Year", 
+     ylab="Long jump", main="Scatter plot between year and long jump")
+```
+
+### (d).
+```{r}
+data.3.d<-fread("http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/tomato.dat")
+
+data.temp.1 <- data.3.d[,c(1,2)] %>% separate(`10000`, c("y1", "y2", "y3"), sep=",") %>%
+  mutate(Density=rep(10000,2))
+data.temp.2 <- data.3.d[,c(1,3)] %>% separate(`20000`, c("y1", "y2", "y3"), sep=",") %>%
+  mutate(Density=rep(20000,2))
+data.temp.3 <- data.3.d[,c(1,4)] %>% separate(`30000`, c("y1", "y2", "y3"), sep=",") %>% 
+  mutate(Density=rep(30000,2))
+
+dat.3.d <-bind_rows(data.temp.1, data.temp.2, data.temp.3 )
+dat.3.d <-dat.3.d %>% rename(variety=V1) %>% 
+  gather(key="Try", value = "yields", y1, y2, y3) %>% select(-Try) 
+
+#change yields to numeric variable
+dat.3.d<-dat.3.d %>% mutate(yields=as.numeric(yields), variety=as.factor(variety))
+
+#print data
+kable(head(dat.3.d), caption="Tomato yield")
+
+#check summary
+kable(summary(dat.3.d), caption="Summary")
+
+#plot
+dat.3.d %>% ggplot(aes(x=variety, y=yields, 
+           group=variety,
+           shape=variety,
+           color=variety)) + 
+           geom_point() + 
+           facet_grid(~factor(Density))
+```
+### (e).
+```{r}
+data.3.e<-fread("https://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/LarvaeControl.dat")
+
+#add age colunm and rename number with treatment
+data.temp.age1<-data.3.e[,c(1:6)] %>% rename(Trt1=`1`, Trt2=`2`, Trt3=`3`, Trt4=`4`, Trt5=`5`) %>% 
+  mutate(age=rep(1,8))
+data.temp.age2 <- data.3.e[,c(1,7:11)] %>%
+  rename(Trt1=`	1`, Trt2=`2`, Trt3=`3`, Trt4=`4`, Trt5=`5`) %>% 
+  mutate(age=rep(2,8))
+
+dat.3.e <- bind_rows(data.temp.age1, data.temp.age2) %>%
+  
+  gather(key="Treatment", value="Counts", Trt1, Trt2, Trt3, Trt4, Trt5) %>%
+  mutate(Treatment=substring(Treatment,4), age=as.factor(age), Block=as.factor(Block))
+
+#print data
+kable(head(dat.3.e), caption="Larvae Counts")
+
+#check summary
+kable(summary(dat.3.e), caption="Summary")
+
+#plot
+dat.3.e %>% ggplot(aes(x=age, y=Counts, 
+           group=Treatment,
+           shape=Treatment,
+           color=Treatment)) + 
+           geom_point(position=position_jitter(h=0.1, w=0.2)) + 
+           facet_grid(~Block)
+```
