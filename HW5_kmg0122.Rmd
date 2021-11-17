@@ -74,7 +74,6 @@ data.2.m$y <- as.numeric(data.2.m$y)
 data.2.m$Operator <- as.numeric(data.2.m$Operator)
 
 
-data.2.m
 
 # bootstrap
 
