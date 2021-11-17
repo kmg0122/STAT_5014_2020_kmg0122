@@ -1,0 +1,238 @@
+---
+title: "HW5_kmg0122"
+author: "Mingang Kim"
+date: '2021 11 8 '
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes: \usepackage{dcolumn}
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+# 2.
+
+### (a)
+```{r}
+library(quantmod)
+
+#1)fetch data from Yahoo
+#AAPL prices
+apple08 <- getSymbols('AAPL', auto.assign = FALSE, from = '2008-1-1', to = 
+"2008-12-31")[,6]
+#market proxy
+rm08<-getSymbols('^ixic', auto.assign = FALSE, from = '2008-1-1', to = 
+"2008-12-31")[,6]
+
+#log returns of AAPL and market
+logapple08<- na.omit(ROC(apple08)*100)
+logrm08<-na.omit(ROC(rm08)*100)
+
+#OLS for beta estimation
+beta_AAPL_08<-summary(lm(logapple08~logrm08))$coefficients[2,1]
+
+#create df from AAPL returns and market returns
+df08<-cbind(logapple08,logrm08)
+set.seed(666)
+Boot_times=1000
+sd.boot=rep(0,Boot_times)
+for(i in 1:Boot_times){
+# nonparametric bootstrap
+bootdata=df08[sample(nrow(df08), size = 251, replace = TRUE),]
+sd.boot[i]= coef(summary(lm(logapple08~logrm08, data = bootdata)))[2,2]
+}
+
+```
+The problem of the given code is that it did not use the right variable name. So when the data is made by "cbind", the variable names are "AAPL.Adjusted" and "IXIC.Adjusted". However, the bootstrap code used logapple08~logrm08 for regression and it results in using original data instead of bootstrapped data. To correct the code, this should be modified like below. In addition, it used Boot in the loop which was not mentioned, it was supposed to be Boot_times, so I modified that part too. 
+
+```{r}
+bootdata=df08[sample(nrow(df08), size = 251, replace = TRUE),]
+sd.boot[i]= coef(summary(lm(AAPL.Adjusted~IXIC.Adjusted, data = bootdata)))[2,2]
+```
+
+
+### (b)
+```{r}
+data.2<-read.csv("https://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/Sensory.dat", header=F, skip=2, sep=" ")
+
+data.2.m <- data.2
+
+for(i in 1: (length(data.2[,1])/3)){
+  for(j in 2:6){
+    data.2.m[3*i-2,j-1]<-data.2.m[3*i-2,j]
+  }
+}
+
+data.2.m <- data.2.m[,1:5]
+
+colnames(data.2.m) <- c('1','2','3','4','5')
+data.2.m <- gather(data.2.m, key = "Operator", value = "y", 1:5)
+data.2.m$y <- as.numeric(data.2.m$y)
+data.2.m$Operator <- as.numeric(data.2.m$Operator)
+
+
+data.2.m
+
+# bootstrap
+
+set.seed(82)
+boot<-function(data, boot.num=100){
+  boot.beta <- matrix(0, boot.num, 2)
+  for(i in 1:boot.num){
+    index1 <- sample(c(1:30), 30, replace = TRUE)
+    index2 <- sample(c(31:60), 30, replace = TRUE)
+    index3 <- sample(c(61:90), 30, replace = TRUE)
+    index4 <- sample(c(91:120), 30, replace = TRUE)
+    index5 <- sample(c(121:150), 30, replace = TRUE)
+    boot.data <- data[c(index1,index2,index3,index4,index5),]
+    fit <- lm(y ~ Operator, boot.data)
+    boot.beta[i,] <- fit$coefficients
+  }
+  boot.beta0 <- mean(boot.beta[,1])
+  boot.beta1 <- mean(boot.beta[,2])
+  
+  beta<-cbind(boot.beta0, boot.beta1)
+  return(beta)
+}
+
+system.time(boot(data.2.m))
+boot(data.2.m)
+```
+
+
+
+
+# 3.
+
+```{r}
+f<-function(x){
+  3^x-sin(x)+cos(5*x)+x^2-1.5
+}
+```
+
+### a.
+```{r}
+#graph
+curve(f, xlim=c(-2,2), col='blue', lwd=2, lty=1, ylab='f(x)')
+abline(h=0)
+abline(v=0)
+```
+There are 4 roots.
+
+```{r}
+#finding root
+
+library(numDeriv)
+
+newton.raphson <- function(f, a, tol = 1e-5, iter.n = 1000) {
+  
+  x0 <- a 
+  
+  fa <- f(a)
+  if (fa == 0.0) {
+    return(a)
+  }
+ 
+
+  for (i in 1:iter.n) {
+    dx <- genD(func = f, x = x0)$D[1] 
+    x1 <- x0 - (f(x0) / dx) 
+    
+    if (abs(x1 - x0) < tol) {
+      root <- x1
+      return(root)
+    }
+    
+    x0 <- x1
+  }
+  print('It failed to converge')
+}
+
+newton.raphson(f, -2)
+```
+
+### (b)
+```{r}
+grid<-seq(-2,2,length.out=1000)
+system.time(sapply(grid, newton.raphson, f=f))
+root.vec<-sapply(grid, newton.raphson, f=f)
+
+summary(root.vec)
+plot(grid, root.vec)
+boxplot(root.vec)
+```
+
+
+# 4. 
+
+### (a)
+
+```{r}
+
+
+gradDescent<-function(X, y, beta, step.size=1e-1, num_iters=1000, tol=1e-9){
+  n <- length(y)
+  grad <- rep(0, num_iters)
+  beta<-c(beta)
+  for(i in 1:num_iters){
+    beta <- c(beta - step.size*(1/n)*(t(X)%*%(X%*%beta - y)))
+    grad[i] <- sum((X%*%beta- y)^2)/(2*n)
+    if(sum(grad^2) <= tol){
+      break
+    }
+  }
+
+  results<-list(beta, grad)
+  return(results)
+}
+
+X<-model.matrix(lm(y~Operator, data.2.m))
+y<-data.2.m$y
+  
+  
+beta<-rep(0,2)
+results <- gradDescent(X, y, beta)
+beta <- results[[1]]
+cost_hist <- results[[2]]
+print(beta)
+
+```
+### (b)
+
+My stopping rule is either iteration is completed or sum of squared error is lower than tolerance. Under the assumption that we know the true value, we can replicate the process until sum of squared error is lower than tolerance without setting iteration number to make values more exactly. However, this method might not be a good way to run algorithm because of computation burden. The problem of this algorithm is that it can provide local minimum, rather than local minimum. Thus, initial value should be set as a value that is not in a range of local minimum. Values which is close to true value can be a good guess for initial value. 
+
+
+### (c)
+```{r}
+betas<-lm(y~., data.2.m)$coef
+
+
+beta0.initial<-seq(betas[1]-1,betas[1]+1,length.out=1000)
+beta1.initial<-seq(betas[2]-1,betas[2]+1,length.out=1000)
+
+X<-model.matrix(lm(y~Operator, data.2.m))
+y<-data.2.m$y
+  
+beta.matrix<-cbind(beta0.initial, beta1.initial)
+
+
+beta.opt.matrix<-matrix(0, nrow = 1000, ncol=2)
+
+for(i in 1:1000){
+  beta.opt.matrix[i,]<-gradDescent(X,y, beta.matrix[i,], step.size = 1e-7, tol = 1e-9)[[1]]
+}
+```
+
+### (d)
+```{r}
+plot(beta0.initial, beta.opt.matrix[,1])
+summary(beta.opt.matrix[,1])
+
+plot(beta1.initial, beta.opt.matrix[,2])
+summary(beta.opt.matrix[,2])
+```
+When step size(learning rate) is very small, this algorithm cannot provide optimal value. 
+
